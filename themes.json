@@ -1,0 +1,25 @@
+{
+  "norush": {
+    "name": "NORUSH",
+    "primary": "#F4D758",
+    "accent": "#2B7FD8",
+    "orange": "#F7A946",
+    "cream": "#fefcf6",
+    "dark": "#1a1a1a",
+    "terminal_bg": "#1a1a1a",
+    "text": "#1a1a1a",
+    "text_secondary": "#555",
+    "text_muted": "#888",
+    "border": "#e8e4dc",
+    "divider": "#ddd8ce",
+    "chat_bg": "#fafafa",
+    "chat_bar": "#f0f0f0",
+    "bubble_cola": "#2B7FD8",
+    "bubble_me": "#F4D758",
+    "quote_gradient_start": "#1e6fc0",
+    "quote_gradient_end": "#2B7FD8",
+    "dot_red": "#ff5f57",
+    "dot_yellow": "#febc2e",
+    "dot_green": "#28c840"
+  }
+}
