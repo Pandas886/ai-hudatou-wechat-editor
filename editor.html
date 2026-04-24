@@ -1144,154 +1144,6 @@ function renderCTA(text, url, variant) {
   </div></div>`;
 }
 
-// ── Publishable Export ──
-function appendHtml(target, html) {
-  target.insertAdjacentHTML('beforeend', html);
-}
-
-function buildImageStyle(img, isSticker) {
-  if (isSticker) {
-    return 'max-width:120px;width:120px;border-radius:16px;display:block;margin:0 auto 24px;';
-  }
-
-  const width = (img.style && img.style.width && img.style.width !== '100%') ? `width:${img.style.width};` : '';
-  return `${width}max-width:100%;border-radius:8px;display:block;margin:0 auto 24px;`;
-}
-
-function getPublishableExportHtml() {
-  const previewEl = document.getElementById('preview');
-  const wrapper = document.createElement('div');
-  wrapper.setAttribute('style', 'padding:24px 16px;color:#1a1a1a;font-size:14px;line-height:1.75;');
-
-  let skippedFirstTitle = false;
-
-  Array.from(previewEl.children).forEach(component => {
-    const block = component.firstElementChild;
-    if (!block) return;
-
-    if (block.classList.contains('nr-h1')) {
-      if (!skippedFirstTitle) {
-        skippedFirstTitle = true;
-        return;
-      }
-      appendHtml(wrapper, `<h1 style="margin:0 0 24px;font-size:30px;line-height:1.35;font-weight:700;">${block.innerHTML}</h1>`);
-      return;
-    }
-
-    if (block.classList.contains('nr-h2')) {
-      appendHtml(wrapper, `<h2 style="margin:0 0 24px;padding:0 0 8px;font-size:22px;line-height:1.4;font-weight:700;color:#1a1a1a;border-bottom:3px solid #F4D758;display:inline-block;">${block.innerHTML}</h2>`);
-      return;
-    }
-
-    if (block.classList.contains('nr-h3')) {
-      appendHtml(wrapper, `<h3 style="margin:0 0 24px;padding-left:12px;border-left:3px solid #2B7FD8;font-size:16px;line-height:1.4;font-weight:600;color:#1a1a1a;">${block.innerHTML}</h3>`);
-      return;
-    }
-
-    if (block.classList.contains('nr-subtitle')) {
-      appendHtml(wrapper, `<p style="margin:14px 0 24px;color:#888;line-height:1.5;">${block.innerHTML}</p>`);
-      return;
-    }
-
-    if (block.classList.contains('nr-blockquote')) {
-      appendHtml(wrapper, `<p style="margin:0 0 24px;padding-left:14px;border-left:3px solid #e8e4dc;color:#555;line-height:1.65;font-style:italic;">${block.innerHTML}</p>`);
-      return;
-    }
-
-    if (block.classList.contains('nr-body')) {
-      appendHtml(wrapper, `<p style="margin:0 0 24px;">${block.innerHTML}</p>`);
-      return;
-    }
-
-    if (block.classList.contains('nr-quote')) {
-      const tag = block.querySelector('.nr-quote-tag');
-      const text = block.querySelector('.nr-quote-text');
-      const source = block.querySelector('.nr-quote-source');
-      appendHtml(
-        wrapper,
-        `<div style="margin:0 0 24px;padding:16px 18px;border-radius:14px;background:#2B7FD8;color:#fff;">` +
-          (tag ? `<p style="margin:0 0 8px;font-size:10px;color:#d7e8fb;text-transform:uppercase;">${tag.innerHTML}</p>` : '') +
-          (text ? `<p style="margin:0 0 8px;font-size:13px;line-height:1.7;color:#fff;">${text.innerHTML}</p>` : '') +
-          (source ? `<p style="margin:0;font-size:10px;color:#d7e8fb;text-align:right;">${source.innerHTML}</p>` : '') +
-        `</div>`
-      );
-      return;
-    }
-
-    if (block.classList.contains('nr-terminal')) {
-      const prompt = block.querySelector('.nr-terminal-prompt');
-      const quote = block.querySelector('.nr-terminal-quote');
-      const brand = block.querySelector('.nr-terminal-brand');
-      appendHtml(
-        wrapper,
-        `<div style="margin:0 0 24px;padding:16px 18px;border-radius:12px;background:#1a1a1a;color:#fff;">` +
-          (prompt ? `<p style="margin:0 0 10px;font-size:11px;color:#8f8f8f;font-family:Menlo,Consolas,monospace;line-height:1.5;">${prompt.textContent.trim()}</p>` : '') +
-          (quote ? `<p style="margin:0;font-size:17px;line-height:1.6;color:#fff;font-family:Menlo,Consolas,monospace;">${quote.innerHTML}</p>` : '') +
-          (brand ? `<p style="margin:12px 0 0;font-size:10px;color:#8f8f8f;font-family:Menlo,Consolas,monospace;text-transform:uppercase;">${brand.textContent.trim()}</p>` : '') +
-        `</div>`
-      );
-      return;
-    }
-
-    if (block.classList.contains('nr-chat')) {
-      const title = block.querySelector('.nr-chat-title');
-      let html = `<div style="margin:0 0 24px;padding:14px 12px;border-radius:12px;background:#fafafa;">`;
-      if (title) {
-        html += `<p style="margin:0 0 12px;font-size:11px;color:#666;text-align:center;font-weight:600;">${title.innerHTML}</p>`;
-      }
-      block.querySelectorAll('.nr-chat-row').forEach(row => {
-        const isRight = row.classList.contains('right');
-        const name = row.querySelector('.nr-chat-name');
-        const bubble = row.querySelector('.nr-chat-bubble');
-        html += `<div style="margin:0 0 10px;text-align:${isRight ? 'right' : 'left'};">`;
-        if (name) {
-          html += `<p style="margin:0 0 4px;font-size:10px;color:#999;">${name.innerHTML}</p>`;
-        }
-        if (bubble) {
-          html += `<span style="display:inline-block;max-width:82%;padding:10px 14px;border-radius:14px;font-size:13px;line-height:1.55;text-align:left;${isRight ? 'background:#F4D758;color:#1a1a1a;' : 'background:#2B7FD8;color:#fff;'}">${bubble.innerHTML}</span>`;
-        }
-        html += `</div>`;
-      });
-      html += `</div>`;
-      appendHtml(wrapper, html);
-      return;
-    }
-
-    if (block.classList.contains('nr-cta')) {
-      const cta = block.querySelector('a, span');
-      if (!cta) return;
-      appendHtml(wrapper, `<p style="margin:0 0 24px;text-align:center;"><span style="display:inline-block;padding:10px 28px;border-radius:24px;background:#F4D758;color:#1a1a1a;font-size:13px;font-weight:600;">${cta.innerHTML}</span></p>`);
-      return;
-    }
-
-    if (block.classList.contains('nr-sticker')) {
-      return;
-    }
-
-    const img = block.querySelector('img');
-    if (img) {
-      const isSticker = (img.alt || '').includes('贴纸');
-      if (isSticker) return;
-      appendHtml(wrapper, `<img alt="${img.alt || ''}" src="${img.src}" style="${buildImageStyle(img, false)}">`);
-      return;
-    }
-
-    if (block.classList.contains('nr-divider')) {
-      appendHtml(wrapper, '<hr style="border:none;border-top:1px solid #e8e4dc;margin:0 0 24px;">');
-    }
-  });
-
-  return wrapper.outerHTML;
-}
-
-function previewPublishableHtml() {
-  const modal = document.getElementById('htmlDebugModal');
-  const textarea = document.getElementById('htmlDebugTextarea');
-  textarea.value = getPublishableExportHtml();
-  textarea.scrollTop = 0;
-  modal.classList.add('show');
-}
-
 function closeHtmlPreview() {
   document.getElementById('htmlDebugModal').classList.remove('show');
 }
@@ -1302,28 +1154,6 @@ function copyHtmlPreviewSource() {
   textarea.select();
   document.execCommand('copy');
   showToast('HTML 源码已复制 ✓');
-}
-
-function getPublishableExportFilename() {
-  const titleEl = document.querySelector('#preview .nr-h1');
-  const fallback = `wechat-publish-${new Date().toISOString().slice(0, 10)}`;
-  const raw = titleEl ? titleEl.textContent.trim() : fallback;
-  const safe = raw.replace(/[\\/:*?"<>|]/g, '-').replace(/\s+/g, ' ').trim() || fallback;
-  return `${safe}.wechat-mp-draft.html`;
-}
-
-function downloadPublishableHtml() {
-  const exportedHtml = getPublishableExportHtml();
-  const blob = new Blob([exportedHtml], { type: 'text/html;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = getPublishableExportFilename();
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
-  showToast('已导出发布 HTML 文件 ✓');
 }
 
 // ── Font Switching ──
@@ -1439,6 +1269,33 @@ editor.addEventListener('keydown', function(e) {
 
 // Initial render
 render();
+</script>
+<script type="module">
+import { buildPublishableFilename, buildPublishableHtml } from './publishable-export.mjs';
+
+window.previewPublishableHtml = function previewPublishableHtml() {
+  const source = window.migrateEditorIdentity ? window.migrateEditorIdentity() : document.getElementById('editor').value;
+  const modal = document.getElementById('htmlDebugModal');
+  const textarea = document.getElementById('htmlDebugTextarea');
+  textarea.value = buildPublishableHtml(source);
+  textarea.scrollTop = 0;
+  modal.classList.add('show');
+};
+
+window.downloadPublishableHtml = function downloadPublishableHtml() {
+  const source = window.migrateEditorIdentity ? window.migrateEditorIdentity() : document.getElementById('editor').value;
+  const exportedHtml = buildPublishableHtml(source);
+  const blob = new Blob([exportedHtml], { type: 'text/html;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = buildPublishableFilename(source);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  window.showToast('已导出发布 HTML 文件 ✓');
+};
 </script>
 </body>
 </html>
