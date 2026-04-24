@@ -158,6 +158,74 @@ body {
   transform: translateX(-50%) translateY(0);
 }
 
+.html-debug-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(16, 16, 16, 0.4);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 24px;
+}
+
+.html-debug-modal.show {
+  display: flex;
+}
+
+.html-debug-panel {
+  width: min(960px, 100%);
+  height: min(78vh, 720px);
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.18);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.html-debug-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+  background: #faf9f6;
+}
+
+.html-debug-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--dark);
+}
+
+.html-debug-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.html-debug-note {
+  padding: 10px 18px 0;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.html-debug-textarea {
+  flex: 1;
+  width: 100%;
+  border: none;
+  outline: none;
+  resize: none;
+  padding: 18px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.65;
+  color: var(--dark);
+  background: #fff;
+}
+
 /* ── Main Layout ── */
 .main {
   display: flex;
@@ -418,7 +486,7 @@ body {
   overflow: hidden;
 }
 
-.nr-quote::before {
+.nr-quote-mark {
   content: '\201c';
   font-family: 'Caveat', cursive;
   font-size: 36px;
@@ -536,7 +604,7 @@ body {
 }
 
 .nr-sticker img {
-  width: 160px;
+  width: 120px;
   height: auto;
   border-radius: 16px;
 }
@@ -558,6 +626,7 @@ body {
   cursor: pointer;
   border: none;
   letter-spacing: 0.3px;
+  white-space: nowrap;
 }
 
 .nr-cta .cta-yellow {
@@ -614,7 +683,8 @@ body {
   <div class="toolbar-sep"></div>
   <button class="toolbar-btn" onclick="doUndo()" title="撤回 (Ctrl+Z)"><span class="icon">↩️</span> 撤回</button>
   <div class="toolbar-spacer"></div>
-  <button class="toolbar-btn export" onclick="exportToClipboard()">📋 复制到公众号</button>
+  <button class="toolbar-btn" onclick="previewPublishableHtml()">&lt;/&gt; 预览发布 HTML</button>
+  <button class="toolbar-btn export" onclick="downloadPublishableHtml()"><span class="icon">📥</span> 导出发布 HTML</button>
   <input type="file" id="imageInput" accept="image/*" style="display:none" onchange="handleImageUpload(event)">
 </div>
 
@@ -628,6 +698,20 @@ body {
     <div class="phone-frame">
       <div class="phone-content" id="preview"></div>
     </div>
+  </div>
+</div>
+
+<div class="html-debug-modal" id="htmlDebugModal" onclick="closeHtmlPreview(event)">
+  <div class="html-debug-panel" onclick="event.stopPropagation()">
+    <div class="html-debug-header">
+      <div class="html-debug-title">当前将导出的发布 HTML</div>
+      <div class="html-debug-actions">
+        <button class="toolbar-btn" onclick="copyHtmlPreviewSource()">复制源码</button>
+        <button class="toolbar-btn" onclick="closeHtmlPreview()">关闭</button>
+      </div>
+    </div>
+    <div class="html-debug-note">这里显示的是用于 `wechat-mp-draft` 发布的 HTML：自动去首个标题、跳过贴纸、CTA 转为非链接按钮。</div>
+    <textarea id="htmlDebugTextarea" class="html-debug-textarea" spellcheck="false" readonly></textarea>
   </div>
 </div>
 
@@ -1013,6 +1097,7 @@ function renderQuote(lines) {
   }
 
   return `<div class="nr-component"><div class="nr-quote">
+    <div class="nr-quote-mark" aria-hidden="true">“</div>
     <div class="nr-quote-tag">${label}</div>
     <p class="nr-quote-text">${text}</p>
     <p class="nr-quote-source">${source}</p>
@@ -1059,62 +1144,186 @@ function renderCTA(text, url, variant) {
   </div></div>`;
 }
 
-// ── Export (WeChat Sanitize) ──
-function sanitizeForWechat(html) {
-  // Remove animations
-  html = html.replace(/animation[^;]*;/gi, '');
-  html = html.replace(/@keyframes[^}]+\{[^}]*\}/gi, '');
-  // Remove box-shadow
-  html = html.replace(/box-shadow[^;]*;/gi, '');
-  // linear-gradient → first color
-  html = html.replace(/linear-gradient\([^)]*,\s*(#[0-9a-fA-F]{3,8})\s*\d*%?\)/gi, '$1');
-  // display:flex → display:block (for WeChat)
-  html = html.replace(/display\s*:\s*flex/gi, 'display:block');
-  // flex-direction, align-self, align-items, gap — remove
-  html = html.replace(/flex-direction[^;]*;/gi, '');
-  html = html.replace(/align-self[^;]*;/gi, '');
-  html = html.replace(/align-items[^;]*;/gi, '');
-  html = html.replace(/gap[^;]*;/gi, '');
-  // Keep border-radius
-  return html;
+// ── Publishable Export ──
+function appendHtml(target, html) {
+  target.insertAdjacentHTML('beforeend', html);
 }
 
-function exportToClipboard() {
+function buildImageStyle(img, isSticker) {
+  if (isSticker) {
+    return 'max-width:120px;width:120px;border-radius:16px;display:block;margin:0 auto 24px;';
+  }
+
+  const width = (img.style && img.style.width && img.style.width !== '100%') ? `width:${img.style.width};` : '';
+  return `${width}max-width:100%;border-radius:8px;display:block;margin:0 auto 24px;`;
+}
+
+function getPublishableExportHtml() {
   const previewEl = document.getElementById('preview');
+  const wrapper = document.createElement('div');
+  wrapper.setAttribute('style', 'padding:24px 16px;color:#1a1a1a;font-size:14px;line-height:1.75;');
 
-  // Clone & inline styles
-  const clone = previewEl.cloneNode(true);
+  let skippedFirstTitle = false;
 
-  // Remove cursor animation spans
-  clone.querySelectorAll('.nr-terminal-cursor').forEach(el => {
-    el.style.animation = '';
-    el.style.opacity = '1';
+  Array.from(previewEl.children).forEach(component => {
+    const block = component.firstElementChild;
+    if (!block) return;
+
+    if (block.classList.contains('nr-h1')) {
+      if (!skippedFirstTitle) {
+        skippedFirstTitle = true;
+        return;
+      }
+      appendHtml(wrapper, `<h1 style="margin:0 0 24px;font-size:30px;line-height:1.35;font-weight:700;">${block.innerHTML}</h1>`);
+      return;
+    }
+
+    if (block.classList.contains('nr-h2')) {
+      appendHtml(wrapper, `<h2 style="margin:0 0 24px;padding:0 0 8px;font-size:22px;line-height:1.4;font-weight:700;color:#1a1a1a;border-bottom:3px solid #F4D758;display:inline-block;">${block.innerHTML}</h2>`);
+      return;
+    }
+
+    if (block.classList.contains('nr-h3')) {
+      appendHtml(wrapper, `<h3 style="margin:0 0 24px;padding-left:12px;border-left:3px solid #2B7FD8;font-size:16px;line-height:1.4;font-weight:600;color:#1a1a1a;">${block.innerHTML}</h3>`);
+      return;
+    }
+
+    if (block.classList.contains('nr-subtitle')) {
+      appendHtml(wrapper, `<p style="margin:14px 0 24px;color:#888;line-height:1.5;">${block.innerHTML}</p>`);
+      return;
+    }
+
+    if (block.classList.contains('nr-blockquote')) {
+      appendHtml(wrapper, `<p style="margin:0 0 24px;padding-left:14px;border-left:3px solid #e8e4dc;color:#555;line-height:1.65;font-style:italic;">${block.innerHTML}</p>`);
+      return;
+    }
+
+    if (block.classList.contains('nr-body')) {
+      appendHtml(wrapper, `<p style="margin:0 0 24px;">${block.innerHTML}</p>`);
+      return;
+    }
+
+    if (block.classList.contains('nr-quote')) {
+      const tag = block.querySelector('.nr-quote-tag');
+      const text = block.querySelector('.nr-quote-text');
+      const source = block.querySelector('.nr-quote-source');
+      appendHtml(
+        wrapper,
+        `<div style="margin:0 0 24px;padding:16px 18px;border-radius:14px;background:#2B7FD8;color:#fff;">` +
+          (tag ? `<p style="margin:0 0 8px;font-size:10px;color:#d7e8fb;text-transform:uppercase;">${tag.innerHTML}</p>` : '') +
+          (text ? `<p style="margin:0 0 8px;font-size:13px;line-height:1.7;color:#fff;">${text.innerHTML}</p>` : '') +
+          (source ? `<p style="margin:0;font-size:10px;color:#d7e8fb;text-align:right;">${source.innerHTML}</p>` : '') +
+        `</div>`
+      );
+      return;
+    }
+
+    if (block.classList.contains('nr-terminal')) {
+      const prompt = block.querySelector('.nr-terminal-prompt');
+      const quote = block.querySelector('.nr-terminal-quote');
+      const brand = block.querySelector('.nr-terminal-brand');
+      appendHtml(
+        wrapper,
+        `<div style="margin:0 0 24px;padding:16px 18px;border-radius:12px;background:#1a1a1a;color:#fff;">` +
+          (prompt ? `<p style="margin:0 0 10px;font-size:11px;color:#8f8f8f;font-family:Menlo,Consolas,monospace;line-height:1.5;">${prompt.textContent.trim()}</p>` : '') +
+          (quote ? `<p style="margin:0;font-size:17px;line-height:1.6;color:#fff;font-family:Menlo,Consolas,monospace;">${quote.innerHTML}</p>` : '') +
+          (brand ? `<p style="margin:12px 0 0;font-size:10px;color:#8f8f8f;font-family:Menlo,Consolas,monospace;text-transform:uppercase;">${brand.textContent.trim()}</p>` : '') +
+        `</div>`
+      );
+      return;
+    }
+
+    if (block.classList.contains('nr-chat')) {
+      const title = block.querySelector('.nr-chat-title');
+      let html = `<div style="margin:0 0 24px;padding:14px 12px;border-radius:12px;background:#fafafa;">`;
+      if (title) {
+        html += `<p style="margin:0 0 12px;font-size:11px;color:#666;text-align:center;font-weight:600;">${title.innerHTML}</p>`;
+      }
+      block.querySelectorAll('.nr-chat-row').forEach(row => {
+        const isRight = row.classList.contains('right');
+        const name = row.querySelector('.nr-chat-name');
+        const bubble = row.querySelector('.nr-chat-bubble');
+        html += `<div style="margin:0 0 10px;text-align:${isRight ? 'right' : 'left'};">`;
+        if (name) {
+          html += `<p style="margin:0 0 4px;font-size:10px;color:#999;">${name.innerHTML}</p>`;
+        }
+        if (bubble) {
+          html += `<span style="display:inline-block;max-width:82%;padding:10px 14px;border-radius:14px;font-size:13px;line-height:1.55;text-align:left;${isRight ? 'background:#F4D758;color:#1a1a1a;' : 'background:#2B7FD8;color:#fff;'}">${bubble.innerHTML}</span>`;
+        }
+        html += `</div>`;
+      });
+      html += `</div>`;
+      appendHtml(wrapper, html);
+      return;
+    }
+
+    if (block.classList.contains('nr-cta')) {
+      const cta = block.querySelector('a, span');
+      if (!cta) return;
+      appendHtml(wrapper, `<p style="margin:0 0 24px;text-align:center;"><span style="display:inline-block;padding:10px 28px;border-radius:24px;background:#F4D758;color:#1a1a1a;font-size:13px;font-weight:600;">${cta.innerHTML}</span></p>`);
+      return;
+    }
+
+    if (block.classList.contains('nr-sticker')) {
+      return;
+    }
+
+    const img = block.querySelector('img');
+    if (img) {
+      const isSticker = (img.alt || '').includes('贴纸');
+      if (isSticker) return;
+      appendHtml(wrapper, `<img alt="${img.alt || ''}" src="${img.src}" style="${buildImageStyle(img, false)}">`);
+      return;
+    }
+
+    if (block.classList.contains('nr-divider')) {
+      appendHtml(wrapper, '<hr style="border:none;border-top:1px solid #e8e4dc;margin:0 0 24px;">');
+    }
   });
 
-  let rawHtml = clone.innerHTML;
-  let sanitized = sanitizeForWechat(rawHtml);
+  return wrapper.outerHTML;
+}
 
-  // Copy as HTML to clipboard
-  const blob = new Blob([sanitized], { type: 'text/html' });
-  const plainBlob = new Blob([sanitized], { type: 'text/plain' });
+function previewPublishableHtml() {
+  const modal = document.getElementById('htmlDebugModal');
+  const textarea = document.getElementById('htmlDebugTextarea');
+  textarea.value = getPublishableExportHtml();
+  textarea.scrollTop = 0;
+  modal.classList.add('show');
+}
 
-  navigator.clipboard.write([
-    new ClipboardItem({
-      'text/html': blob,
-      'text/plain': plainBlob
-    })
-  ]).then(() => {
-    showToast('已复制！粘贴到公众号编辑器即可 ✓');
-  }).catch(() => {
-    // Fallback
-    const ta = document.createElement('textarea');
-    ta.value = sanitized;
-    document.body.appendChild(ta);
-    ta.select();
-    document.execCommand('copy');
-    document.body.removeChild(ta);
-    showToast('已复制 HTML 到剪贴板 ✓');
-  });
+function closeHtmlPreview() {
+  document.getElementById('htmlDebugModal').classList.remove('show');
+}
+
+function copyHtmlPreviewSource() {
+  const textarea = document.getElementById('htmlDebugTextarea');
+  textarea.focus();
+  textarea.select();
+  document.execCommand('copy');
+  showToast('HTML 源码已复制 ✓');
+}
+
+function getPublishableExportFilename() {
+  const titleEl = document.querySelector('#preview .nr-h1');
+  const fallback = `wechat-publish-${new Date().toISOString().slice(0, 10)}`;
+  const raw = titleEl ? titleEl.textContent.trim() : fallback;
+  const safe = raw.replace(/[\\/:*?"<>|]/g, '-').replace(/\s+/g, ' ').trim() || fallback;
+  return `${safe}.wechat-mp-draft.html`;
+}
+
+function downloadPublishableHtml() {
+  const exportedHtml = getPublishableExportHtml();
+  const blob = new Blob([exportedHtml], { type: 'text/html;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = getPublishableExportFilename();
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  showToast('已导出发布 HTML 文件 ✓');
 }
 
 // ── Font Switching ──
