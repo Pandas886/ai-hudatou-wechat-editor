@@ -1,8 +1,8 @@
-# NORUSH 公众号排版编辑器
+# AI 胡大头公众号排版编辑器
 
-> 不赶时间，但也不浪费时间。
+> 面向公众号文章的 Markdown 排版工具。
 
-一个为 **不赶时间NORUSH** 品牌打造的公众号排版工具。左侧 Markdown 编辑，右侧手机实时预览，一键导出微信兼容 HTML。
+一个为 **AI 胡大头** 打造的公众号排版工具。左侧 Markdown 编辑，右侧手机实时预览，一键导出微信兼容 HTML。
 
 ![Brand Colors](https://img.shields.io/badge/brand-黄%20%23F4D758-F4D758) ![Brand Colors](https://img.shields.io/badge/accent-蓝%20%232B7FD8-2B7FD8)
 
@@ -30,13 +30,13 @@ python3 -m http.server 8080
 ## 📁 文件结构
 
 ```
-norush-wechat-editor/
-├── SKILL.md          # Cola Skill 描述文件
+wechat-editor/
+├── SKILL.md          # Skill 描述文件
 ├── README.md         # 本文件
 ├── editor.html       # 编辑器（自包含 HTML）
 ├── themes.json       # 品牌色系配置
 └── assets/
-    └── ip-avatar.jpg # 默认 IP 贴纸
+    └── ip-avatar.jpg # 默认贴纸
 ```
 
 ## 🎨 自定义字体

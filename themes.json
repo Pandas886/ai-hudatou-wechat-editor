@@ -1,6 +1,6 @@
 {
-  "norush": {
-    "name": "NORUSH",
+  "ai-hudatou": {
+    "name": "AI 胡大头",
     "primary": "#F4D758",
     "accent": "#2B7FD8",
     "orange": "#F7A946",
@@ -14,7 +14,7 @@
     "divider": "#ddd8ce",
     "chat_bg": "#fafafa",
     "chat_bar": "#f0f0f0",
-    "bubble_cola": "#2B7FD8",
+    "bubble_ai": "#2B7FD8",
     "bubble_me": "#F4D758",
     "quote_gradient_start": "#1e6fc0",
     "quote_gradient_end": "#2B7FD8",

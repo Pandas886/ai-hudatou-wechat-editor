@@ -1,12 +1,12 @@
 ---
-name: norush-wechat-editor
+name: ai-hudatou-wechat-editor
 description: >
-  NORUSH 公众号排版网页编辑器。左侧 Markdown 编辑 + 右侧手机实时预览，支持对话气泡、引用卡、终端金句、
+  AI 胡大头公众号排版网页编辑器。左侧 Markdown 编辑 + 右侧手机实时预览，支持对话气泡、引用卡、终端金句、
   IP贴纸、CTA按钮等 6 种自定义组件，选区转组件、字体切换、图片插入、撤回，一键导出微信兼容 HTML。
-  Use when: 公众号排版、微信编辑器、wechat layout、文章排版、NORUSH editor。
+  Use when: 公众号排版、微信编辑器、wechat layout、文章排版、AI 胡大头 editor。
 ---
 
-# NORUSH 公众号排版编辑器
+# AI 胡大头公众号排版编辑器
 
 一个自包含的网页编辑器，用于创作和导出公众号文章。
 
@@ -59,15 +59,15 @@ open editor.html
 
 ## 文件结构
 ```
-norush-wechat-editor/
+wechat-editor/
 ├── SKILL.md          # 本文件
 ├── editor.html       # 编辑器主文件（自包含）
 ├── themes.json       # 品牌色系配置
 └── assets/
-    └── ip-avatar.jpg # 默认 IP 贴纸图片
+    └── ip-avatar.jpg # 默认贴纸图片
 ```
 
 ## 自定义
 - 修改 `themes.json` 更换品牌色
-- 替换 `assets/ip-avatar.jpg` 更换默认贴纸
+- 修改 `editor.html` 里的 `STICKER_IMAGE` 更换默认贴纸
 - 将自定义字体 `.ttf` 放在同目录，编辑器会自动加载
